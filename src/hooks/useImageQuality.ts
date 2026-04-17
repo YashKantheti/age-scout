@@ -15,13 +15,19 @@ const SAMPLE_W = 160;
 const SAMPLE_H = 120;
 const INTERVAL = 500; // ms between checks
 
+let _qCanvas: HTMLCanvasElement | null = null;
+let _qCtx: CanvasRenderingContext2D | null = null;
+
 function analyzeFrame(video: HTMLVideoElement): ImageQuality | null {
   if (video.readyState < 2 || video.videoWidth === 0) return null;
 
-  const canvas = document.createElement('canvas');
-  canvas.width  = SAMPLE_W;
-  canvas.height = SAMPLE_H;
-  const ctx = canvas.getContext('2d')!;
+  if (!_qCanvas) {
+    _qCanvas = document.createElement('canvas');
+    _qCanvas.width  = SAMPLE_W;
+    _qCanvas.height = SAMPLE_H;
+    _qCtx = _qCanvas.getContext('2d')!;
+  }
+  const ctx = _qCtx!;
   ctx.drawImage(video, 0, 0, SAMPLE_W, SAMPLE_H);
   const { data } = ctx.getImageData(0, 0, SAMPLE_W, SAMPLE_H);
 

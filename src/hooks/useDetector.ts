@@ -128,17 +128,24 @@ function nms(dets: Detection[], iouThresh: number): Detection[] {
 
 // ---------------------------------------------------------------------------
 // Preprocess: resize video frame to 640×640, return Float32Array in CHW order
+// Reuse a single canvas and tensor buffer to avoid per-frame GPU allocations.
 // ---------------------------------------------------------------------------
-function preprocessFrame(video: HTMLVideoElement): Float32Array {
-  const canvas = document.createElement('canvas');
-  canvas.width  = INPUT_SIZE;
-  canvas.height = INPUT_SIZE;
-  const ctx = canvas.getContext('2d')!;
-  ctx.drawImage(video, 0, 0, INPUT_SIZE, INPUT_SIZE);
-  const imageData = ctx.getImageData(0, 0, INPUT_SIZE, INPUT_SIZE);
-  const { data } = imageData;
+let _prepCanvas: HTMLCanvasElement | null = null;
+let _prepCtx: CanvasRenderingContext2D | null = null;
+let _prepTensor: Float32Array | null = null;
 
-  const tensor = new Float32Array(3 * INPUT_SIZE * INPUT_SIZE);
+function preprocessFrame(video: HTMLVideoElement): Float32Array {
+  if (!_prepCanvas) {
+    _prepCanvas = document.createElement('canvas');
+    _prepCanvas.width  = INPUT_SIZE;
+    _prepCanvas.height = INPUT_SIZE;
+    _prepCtx = _prepCanvas.getContext('2d')!;
+    _prepTensor = new Float32Array(3 * INPUT_SIZE * INPUT_SIZE);
+  }
+  _prepCtx!.drawImage(video, 0, 0, INPUT_SIZE, INPUT_SIZE);
+  const { data } = _prepCtx!.getImageData(0, 0, INPUT_SIZE, INPUT_SIZE);
+  const tensor = _prepTensor!;
+
   for (let i = 0; i < INPUT_SIZE * INPUT_SIZE; i++) {
     tensor[i]                           = data[i * 4]     / 255;  // R
     tensor[INPUT_SIZE * INPUT_SIZE + i] = data[i * 4 + 1] / 255;  // G
@@ -146,6 +153,9 @@ function preprocessFrame(video: HTMLVideoElement): Float32Array {
   }
   return tensor;
 }
+
+// Cached ort module — imported once, reused every frame
+let _ort: typeof import('onnxruntime-web') | null = null;
 
 // ---------------------------------------------------------------------------
 // Hook
@@ -155,6 +165,8 @@ export function useDetector(videoRef: React.RefObject<HTMLVideoElement | null>) 
   const metaRef      = useRef<ModelMeta | null>(null);
   const rafRef       = useRef<number>(0);
   const runningRef   = useRef(false);
+
+  const inferringRef  = useRef(false); // guard against concurrent inference
 
   const [state, setState]         = useState<DetectorState>('idle');
   const [detections, setDetections] = useState<Detection[]>([]);
@@ -166,12 +178,12 @@ export function useDetector(videoRef: React.RefObject<HTMLVideoElement | null>) 
     if (sessionRef.current) return;
     setState('loading');
     try {
-      const ort = await import('onnxruntime-web');
+      if (!_ort) _ort = await import('onnxruntime-web');
+      const ort = _ort;
 
-      // Use WebGL backend for GPU-accelerated inference
       ort.env.wasm.wasmPaths = '/';
       const session = await ort.InferenceSession.create(MODEL_URL, {
-        executionProviders: ['webgl', 'wasm'],
+        executionProviders: ['wasm'],
         graphOptimizationLevel: 'all',
       });
       sessionRef.current = session;
@@ -188,18 +200,24 @@ export function useDetector(videoRef: React.RefObject<HTMLVideoElement | null>) 
 
   // ── Single inference pass ────────────────────────────────────────────────
   const runFrame = useCallback(async () => {
+    // Drop frame if previous inference hasn't finished — prevents GPU overload
+    if (inferringRef.current) return;
     const session = sessionRef.current;
     const meta    = metaRef.current;
     const video   = videoRef.current;
     if (!session || !meta || !video || video.readyState < 2) return;
 
+    inferringRef.current = true;
     try {
-      const ort = await import('onnxruntime-web');
-      const tensor = preprocessFrame(video);
-      const input  = new ort.Tensor('float32', tensor, [1, 3, INPUT_SIZE, INPUT_SIZE]);
+      const ort = _ort!;
+      // Copy tensor data before inference so the shared buffer can be reused next frame
+      const rawTensor = preprocessFrame(video);
+      const tensorCopy = new Float32Array(rawTensor);
+      const input  = new ort.Tensor('float32', tensorCopy, [1, 3, INPUT_SIZE, INPUT_SIZE]);
 
       const results = await session.run({ images: input });
-      const rawData  = results['output0'].data as Float32Array;
+      const output = results['output0'];
+      const rawData  = output.data as Float32Array;
 
       const dets = parseYoloOutput(
         rawData,
@@ -214,6 +232,11 @@ export function useDetector(videoRef: React.RefObject<HTMLVideoElement | null>) 
         })
         .filter((d): d is NonNullable<typeof d> => d !== null);
 
+      // Dispose output tensor to free GPU memory
+      if (typeof (output as unknown as { dispose?: () => void }).dispose === 'function') {
+        (output as unknown as { dispose: () => void }).dispose();
+      }
+
       setDetections(dets);
 
       // FPS counter
@@ -226,6 +249,8 @@ export function useDetector(videoRef: React.RefObject<HTMLVideoElement | null>) 
       }
     } catch {
       // silently skip dropped frames
+    } finally {
+      inferringRef.current = false;
     }
   }, [videoRef]);
 
