@@ -157,6 +157,10 @@ export function ScannerScreen({ onToast }: Props) {
       const part: Part = { ...data.part, scannedAt: new Date().toISOString() };
       setResult(part);
       setConfPct(Math.round((part.confidence || 0.9) * 100));
+      // Auto-select the identified assembly if AI is confident
+      if (part.identifiedAssembly && part.identifiedAssembly.confidence !== 'low') {
+        setSelectedEquipment({ name: part.identifiedAssembly.name, role: part.identifiedAssembly.model });
+      }
       setScanState('result');
     } catch (err) {
       setErrMsg(err instanceof Error ? err.message : 'Unexpected error');

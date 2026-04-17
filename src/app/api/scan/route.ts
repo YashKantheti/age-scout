@@ -29,7 +29,9 @@ STEP 1 — Image quality: confidence ≤ 0.15 if dark/blurry/no hardware.
 
 STEP 2 — Identify: read all visible text first. Match to AGE categories: compressors, generators, tow bars, hydraulic equipment, fuel servicing, lighting, munitions support.
 
-STEP 3 — Respond ONLY with valid JSON (no markdown, no explanation outside the JSON):
+STEP 3 — Identify the parent assembly. Use specific model designations (e.g. "MC-7", "A/M32A-86A", "NC-8A/B", "MD-3A") — never generic labels like "Air Compressor" alone. Cross-reference visible markings, NSNs, and the known T.O. list above. If uncertain between models, list all candidates in possibleEquipment and set the most likely one in identifiedAssembly.
+
+STEP 4 — Respond ONLY with valid JSON (no markdown, no explanation outside the JSON):
 {
   "partName": "Official military nomenclature (e.g. COMPRESSOR, AIR, ROTARY)",
   "nsn": "4-digit FSC + XX-XXX-XXXX if not visible; exact NSN only if readable in image",
@@ -41,6 +43,11 @@ STEP 3 — Respond ONLY with valid JSON (no markdown, no explanation outside the
   "unitPrice": "See DLA for FSC XXXX pricing",
   "location": "Typical bin/cage storage designation",
   "elmsNotes": "Inspection interval or maintenance requirement for this equipment type; else empty string",
+  "identifiedAssembly": {
+    "model": "Specific model designation (e.g. MC-7, A/M32A-86A, NC-8A/B) — never generic",
+    "name": "Full assembly name with model (e.g. MC-7 Air Compressor)",
+    "confidence": "high | medium | low"
+  },
   "ipbReference": {
     "toNumber": "Most relevant T.O. for this equipment's IPB; empty string if unknown",
     "figure": "Typical figure number if known; else empty string",
@@ -50,7 +57,7 @@ STEP 3 — Respond ONLY with valid JSON (no markdown, no explanation outside the
   "confirmedFromImage": ["fields", "readable", "from", "image"],
   "dataWarnings": ["NSN estimated from FSC — verify in FEDLOG", "T.O.s are suggested based on equipment type — confirm in e-Publishing before use"],
   "possibleEquipment": [
-    {"name": "Parent AGE assembly name", "role": "How this part fits"}
+    {"name": "Full name with specific model (e.g. MC-7 Air Compressor)", "role": "How this part fits"}
   ],
   "alternativeParts": [
     {"name": "Part name", "nsn": "NSN if known", "compatibility": "Compatibility note"}
@@ -92,7 +99,9 @@ STEP 1 — Image quality check. Confidence ≤ 0.15 if blurry/dark/no hardware.
 
 STEP 2 — Identify: read all visible text first. Map to GSE categories: GPU, air starter, hydraulic test stand, de-icer, tow tractor, maintenance stand, fueling, lav/water service.
 
-STEP 3 — Respond ONLY with valid JSON (no markdown):
+STEP 3 — Identify the parent assembly with specific model. Use manufacturer model numbers (e.g. "Hobart 400Hz GPU", "JBT B400 Tow Tractor", "Tronair 01-1442-0000 Hydraulic Test Stand") — never generic labels alone. If uncertain, list candidates in possibleEquipment and set the best match in identifiedAssembly.
+
+STEP 4 — Respond ONLY with valid JSON (no markdown):
 {
   "partName": "Manufacturer/common part name",
   "nsn": "ATA chapter code (e.g. ATA 12-10) or manufacturer P/N if visible; else best ATA reference",
@@ -104,6 +113,11 @@ STEP 3 — Respond ONLY with valid JSON (no markdown):
   "unitPrice": "Contact manufacturer for pricing",
   "location": "Typical hangar/ramp storage",
   "elmsNotes": "AMM reference or inspection interval for this equipment type; else empty string",
+  "identifiedAssembly": {
+    "model": "Specific model designation (e.g. Hobart 400Hz, JBT B400) — never generic",
+    "name": "Full assembly name with model (e.g. Hobart 400Hz Ground Power Unit)",
+    "confidence": "high | medium | low"
+  },
   "ipbReference": {
     "toNumber": "Most relevant IPC/AMM manual for this equipment; empty string if unknown",
     "figure": "Typical figure number if known; else empty string",
@@ -113,7 +127,7 @@ STEP 3 — Respond ONLY with valid JSON (no markdown):
   "confirmedFromImage": ["fields", "readable", "from", "image"],
   "dataWarnings": ["Part number is estimated — verify against OEM IPC before ordering", "Manuals are suggested based on equipment type — confirm revision before use"],
   "possibleEquipment": [
-    {"name": "Parent GSE/aircraft system", "role": "How this part fits"}
+    {"name": "Full name with specific model (e.g. Hobart 400Hz Ground Power Unit)", "role": "How this part fits"}
   ],
   "alternativeParts": [
     {"name": "Part name", "nsn": "P/N or ATA ref if known", "compatibility": "Compatibility note"}

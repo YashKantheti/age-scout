@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import { Msi } from '../Msi';
 import { useAppStore } from '@/store/appStore';
 import type { Part } from '@/types';
@@ -47,13 +48,15 @@ function PartCard({ part }: { part: Part }) {
 
 export function EquipmentScreen() {
   const { history } = useAppStore();
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
 
   return (
     <div className="flex flex-col h-full">
       <header className="shrink-0 bg-surface border-b border-border-light z-40 flex items-center px-4 md:px-8 h-14">
         <h1 className="text-base font-bold uppercase tracking-tight">Equipment History</h1>
         <span className="ml-3 text-xs font-bold text-text-muted bg-bg-light border border-border-light px-2 py-0.5 rounded-full">
-          {history.length} parts
+          {mounted ? history.length : 0} parts
         </span>
       </header>
       <main className="flex-1 overflow-y-auto hide-scroll pb-20 md:pb-8 px-4 md:px-8 pt-4">
@@ -65,7 +68,7 @@ export function EquipmentScreen() {
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
-            {history.map((p, i) => <PartCard key={p.scannedAt || i} part={p} />)}
+            {history.map((p, i) => <PartCard key={`${p.scannedAt ?? ''}-${i}`} part={p} />)}
           </div>
         )}
       </main>

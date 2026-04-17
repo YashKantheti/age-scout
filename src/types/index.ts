@@ -21,6 +21,12 @@ export interface EquipmentOption {
   role: string;
 }
 
+export interface IdentifiedAssembly {
+  model: string;
+  name: string;
+  confidence: 'high' | 'medium' | 'low';
+}
+
 export interface IpbReference {
   toNumber: string;
   figure: string;
@@ -44,6 +50,7 @@ export interface Part {
   dataWarnings?: string[];
   alternativeParts: AlternativePart[];
   technicalOrders: TechnicalOrder[];
+  identifiedAssembly?: IdentifiedAssembly;
   possibleEquipment?: EquipmentOption[];
   parentAssembly?: string;
   scannedAt?: string;

@@ -77,8 +77,26 @@ export function PartDetailsScreen({ onToast }: Props) {
               </div>
             </div>
 
-            {/* Parent assembly context */}
-            {p.parentAssembly && (
+            {/* Identified assembly */}
+            {p.identifiedAssembly && (
+              <div className="mt-3 flex items-center gap-3 bg-primary/5 border border-primary/20 rounded-lg px-3 py-2.5">
+                <Msi icon="precision_manufacturing" className="text-primary text-[20px] shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <p className="text-[9px] font-bold text-primary uppercase tracking-wider">Parent Assembly</p>
+                  <p className="text-sm font-bold text-text-main leading-tight">{p.identifiedAssembly.name}</p>
+                  <p className="text-[10px] font-mono text-text-muted mt-0.5">{p.identifiedAssembly.model}</p>
+                </div>
+                <span className={`text-[9px] font-black px-2 py-1 rounded-full uppercase tracking-wide shrink-0 ${
+                  p.identifiedAssembly.confidence === 'high' ? 'bg-success/10 text-success border border-success/20' :
+                  p.identifiedAssembly.confidence === 'medium' ? 'bg-amber-100 text-amber-700 border border-amber-200' :
+                  'bg-gray-100 text-text-muted border border-border-light'
+                }`}>
+                  {p.identifiedAssembly.confidence}
+                </span>
+              </div>
+            )}
+            {/* Manual assembly context override */}
+            {p.parentAssembly && !p.identifiedAssembly && (
               <div className="mt-3 flex items-center gap-2 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
                 <Msi icon="account_tree" className="text-amber-600 text-[18px] shrink-0" />
                 <div>

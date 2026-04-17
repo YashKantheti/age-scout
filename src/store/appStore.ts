@@ -89,7 +89,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   prevScreen: 'dashboard',
   currentPart: null,
   cart: loadFromStorage<CartItem[]>('age_cart', []),
-  history: loadFromStorage<Part[]>('age_history', []),
+  history: [],
   notes: loadFromStorage<Note[]>('age_notes', null as unknown as Note[]) ?? defaultNotes(),
   noteFilter: 'all',
   apiKey: loadFromStorage<string>('age_api_key', ''),
