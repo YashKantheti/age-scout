@@ -169,6 +169,12 @@ export function DashboardScreen({ onOpenSettings }: Props) {
           </div>
         </div>
       </main>
+
+      <footer className="shrink-0 text-center py-2 border-t border-border-light bg-surface">
+        <p className="text-[10px] text-text-muted font-semibold tracking-wide">
+          Built by <span className="text-primary font-bold">Team Falcon</span> · Virginia Tech · Spring 2026
+        </p>
+      </footer>
     </div>
   );
 }

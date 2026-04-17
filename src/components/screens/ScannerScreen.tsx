@@ -67,15 +67,20 @@ export function ScannerScreen({ onToast }: Props) {
   const [confPct, setConfPct]       = useState(0);
   const [uploadedImage, setUploadedImage] = useState<string | null>(null);
   const [selectedEquipment, setSelectedEquipment] = useState<EquipmentOption | null>(null);
+  const [cameraActive, setCameraActive] = useState(false);
 
-  // ── Start camera + detector ───────────────────────────────────────────────
-  useEffect(() => {
+  // ── Start camera on demand ────────────────────────────────────────────────
+  function enableCamera() {
+    setCameraActive(true);
     start().then(() => {
       startQuality();
       load().then(() => {
         if (detState !== 'error') startLoop();
       });
     });
+  }
+
+  useEffect(() => {
     return () => { stop(); stopLoop(); stopQuality(); };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -233,7 +238,13 @@ export function ScannerScreen({ onToast }: Props) {
     setResult(null);
     setUploadedImage(null);
     setSelectedEquipment(null);
-    startLoop();
+    if (cameraActive) startLoop();
+  }
+
+  function cancelScan() {
+    setScanState('idle');
+    setErrMsg('');
+    if (cameraActive) startLoop();
   }
 
   function confirmEquipment(eq: EquipmentOption | null) {
@@ -268,10 +279,36 @@ export function ScannerScreen({ onToast }: Props) {
             <span className="text-[10px] text-white/50 mt-0.5">Loading detector...</span>
           )}
         </div>
-        <button onClick={toggleTorch} className="text-white w-10 h-10 flex items-center justify-center">
+        <button onClick={toggleTorch} disabled={!cameraActive} className="text-white w-10 h-10 flex items-center justify-center disabled:opacity-30">
           <Msi icon={torchOn ? 'flash_off' : 'flash_on'} />
         </button>
       </header>
+
+      {/* Camera off — prompt to enable */}
+      {!cameraActive && !uploadedImage && (
+        <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-neutral-950 gap-6 px-8">
+          <div className="w-20 h-20 rounded-full bg-primary/10 border border-primary/30 flex items-center justify-center">
+            <Msi icon="photo_camera" className="text-primary text-[40px]" />
+          </div>
+          <div className="text-center">
+            <p className="text-white font-bold text-lg">Camera is off</p>
+            <p className="text-white/50 text-sm mt-1">Enable to scan parts, or upload an image</p>
+          </div>
+          <button
+            onClick={enableCamera}
+            className="bg-primary text-white px-8 py-3.5 rounded-xl font-bold text-sm shadow-lg"
+          >
+            Enable Camera
+          </button>
+          <button
+            onClick={openUploadPicker}
+            className="flex items-center gap-2 text-white/60 text-sm font-semibold"
+          >
+            <Msi icon="photo_library" className="text-[18px]" />
+            Upload Image Instead
+          </button>
+        </div>
+      )}
 
       {/* Video feed */}
       <video ref={videoRef} className={`absolute inset-0 w-full h-full object-cover ${uploadedImage ? 'invisible' : ''}`} autoPlay playsInline muted />
@@ -382,6 +419,9 @@ export function ScannerScreen({ onToast }: Props) {
         <div className="absolute bottom-0 left-0 right-0 z-20 flex flex-col items-center gap-3 pb-10 pt-8 bg-gradient-to-t from-black/85 to-transparent">
           <div className="w-8 h-8 rounded-full border-2 border-white/30 border-t-white spin" />
           <p className="text-white text-xs font-bold uppercase tracking-widest">{statusText}</p>
+          <button onClick={cancelScan} className="text-white/50 text-xs font-semibold mt-1 hover:text-white transition-colors">
+            Cancel
+          </button>
         </div>
       )}
 

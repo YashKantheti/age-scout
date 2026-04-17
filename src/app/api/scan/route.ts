@@ -144,9 +144,9 @@ export async function POST(request: NextRequest) {
   try {
     const { imageBase64, apiKey, model, operationMode } = await request.json();
 
-    const key = process.env.OPENROUTER_API_KEY || apiKey;
+    const key = (process.env.OPENROUTER_API_KEY || apiKey || '').trim();
     if (!key) {
-      return Response.json({ error: 'No API key provided' }, { status: 401 });
+      return Response.json({ error: 'No API key — set OPENROUTER_API_KEY in Vercel env vars or enter one in Settings' }, { status: 401 });
     }
 
     const endpoint = 'https://openrouter.ai/api/v1/chat/completions';
