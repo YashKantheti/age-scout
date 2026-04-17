@@ -7,51 +7,44 @@ import { useAppStore } from '@/store/appStore';
 import type { NoteFilter, Note } from '@/types';
 
 const FILTERS: { value: NoteFilter; label: string }[] = [
-  { value: 'all', label: 'All' },
-  { value: 'hazard', label: 'Hazards' },
-  { value: 'general', label: 'General' },
+  { value: 'all',       label: 'All'       },
+  { value: 'hazard',    label: 'Hazards'   },
+  { value: 'general',   label: 'General'   },
   { value: 'pass-down', label: 'Pass-down' },
 ];
 
-const BADGE: Record<string, React.ReactNode> = {
-  hazard: (
-    <div className="shrink-0 flex items-center gap-1 px-2.5 py-1 rounded text-xs font-bold uppercase border bg-amber-100 text-amber-700 border-amber-200">
-      <Msi icon="warning" className="text-[13px]" />Hazard
-    </div>
-  ),
-  'pass-down': (
-    <div className="shrink-0 flex items-center gap-1 px-2.5 py-1 rounded text-xs font-bold uppercase border bg-gray-100 text-gray-600 border-gray-200">
-      <Msi icon="sync_alt" className="text-[13px]" />Pass-down
-    </div>
-  ),
-  general: (
-    <div className="shrink-0 flex items-center gap-1 px-2.5 py-1 rounded text-xs font-bold uppercase border bg-blue-50 text-blue-700 border-blue-200">
-      <Msi icon="info" className="text-[13px]" />General
-    </div>
-  ),
+const BADGE_CONFIG: Record<string, { bg: string; text: string; border: string; icon: string; label: string }> = {
+  hazard:      { bg: 'bg-amber-50',  text: 'text-amber-700',  border: 'border-amber-200',  icon: 'warning',   label: 'Hazard'    },
+  'pass-down': { bg: 'bg-gray-100',  text: 'text-gray-600',   border: 'border-gray-200',   icon: 'sync_alt',  label: 'Pass-down' },
+  general:     { bg: 'bg-blue-50',   text: 'text-blue-700',   border: 'border-blue-200',   icon: 'info',      label: 'General'   },
 };
 
 function NoteCard({ note }: { note: Note }) {
   const { likeNote } = useAppStore();
+  const badge = BADGE_CONFIG[note.type];
   return (
-    <article className="bg-white rounded border border-gray-200 p-4 shadow-sm flex flex-col gap-3">
+    <article className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm flex flex-col gap-3 break-inside-avoid">
       <div className="flex justify-between items-start gap-2">
         <div className="flex items-center gap-3 min-w-0">
-          <div className="h-10 w-10 rounded-full bg-gray-200 flex items-center justify-center text-gray-600 font-bold text-sm shrink-0">
+          <div className="h-9 w-9 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-sm shrink-0">
             {note.initials}
           </div>
           <div className="min-w-0">
             <p className="font-bold text-sm">{note.author}</p>
-            <p className="text-xs text-text-muted">{note.time} · {note.unit}</p>
+            <p className="text-[10px] text-text-muted">{note.time} · {note.unit}</p>
           </div>
         </div>
-        {BADGE[note.type]}
+        {badge && (
+          <div className={`shrink-0 flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold uppercase border ${badge.bg} ${badge.text} ${badge.border}`}>
+            <Msi icon={badge.icon} className="text-[13px]" />{badge.label}
+          </div>
+        )}
       </div>
       <div className="text-sm leading-relaxed">
         {note.title && <p className="font-semibold mb-1">{note.title}</p>}
         <p className="text-text-main">{note.body}</p>
         {note.nsn && (
-          <div className="mt-2 text-xs font-mono text-text-muted bg-gray-100 inline-block px-2 py-1 rounded">
+          <div className="mt-2 text-xs font-mono text-text-muted bg-gray-100 inline-block px-2 py-1 rounded-lg">
             NSN: {note.nsn}
           </div>
         )}
@@ -73,9 +66,7 @@ function NoteCard({ note }: { note: Note }) {
   );
 }
 
-interface Props {
-  onToast: (msg: string) => void;
-}
+interface Props { onToast: (msg: string) => void; }
 
 export function NotesScreen({ onToast }: Props) {
   const { notes, noteFilter, setNoteFilter } = useAppStore();
@@ -92,13 +83,19 @@ export function NotesScreen({ onToast }: Props) {
 
   return (
     <div className="flex flex-col h-full">
-      <div className="shrink-0 bg-white border-b border-gray-200 z-10">
-        <div className="flex items-center justify-between px-4 pt-4 pb-2">
+      <div className="shrink-0 bg-white border-b border-gray-200 z-10 px-4 md:px-8">
+        <div className="flex items-center justify-between pt-4 pb-2">
           <h1 className="text-xl font-bold tracking-tight">The Line</h1>
-          <button className="p-2 text-text-muted"><Msi icon="tune" className="text-2xl" /></button>
+          <button
+            onClick={() => setAddOpen(true)}
+            className="flex items-center gap-2 bg-primary text-white px-4 py-2 rounded-lg text-sm font-bold hover:bg-primary/90 transition-colors"
+          >
+            <Msi icon="add" className="text-[18px]" />
+            <span className="hidden sm:inline">Add Note</span>
+          </button>
         </div>
-        <div className="px-4 pb-2">
-          <div className="flex items-center bg-gray-100 rounded-lg h-11 px-3 gap-2 border border-transparent focus-within:border-primary focus-within:ring-1 focus-within:ring-primary transition-all">
+        <div className="pb-2">
+          <div className="flex items-center bg-gray-100 rounded-xl h-11 px-3 gap-2 border border-transparent focus-within:border-primary focus-within:ring-1 focus-within:ring-primary transition-all">
             <Msi icon="search" className="text-text-muted text-[20px]" />
             <input
               type="search"
@@ -109,12 +106,12 @@ export function NotesScreen({ onToast }: Props) {
             />
           </div>
         </div>
-        <div className="px-4 pb-3 flex gap-2 overflow-x-auto hide-scroll">
+        <div className="pb-3 flex gap-2 overflow-x-auto hide-scroll">
           {FILTERS.map(f => (
             <button
               key={f.value}
               onClick={() => setNoteFilter(f.value)}
-              className={`shrink-0 px-4 py-1.5 rounded-full text-xs font-bold tracking-wide border transition-colors ${noteFilter === f.value ? 'bg-primary text-white border-primary' : 'border-gray-200 text-gray-600 bg-white'}`}
+              className={`shrink-0 px-4 py-1.5 rounded-full text-xs font-bold tracking-wide border transition-colors ${noteFilter === f.value ? 'bg-primary text-white border-primary' : 'border-gray-200 text-gray-600 bg-white hover:border-primary/40'}`}
             >
               {f.label}
             </button>
@@ -122,17 +119,20 @@ export function NotesScreen({ onToast }: Props) {
         </div>
       </div>
 
-      <main className="flex-1 overflow-y-auto hide-scroll p-4 flex flex-col gap-4 pb-28">
+      <main className="flex-1 overflow-y-auto hide-scroll p-4 md:p-8 pb-28 md:pb-8">
         {filtered.length === 0 ? (
           <p className="text-xs text-text-muted text-center py-10">No notes found.</p>
         ) : (
-          filtered.map(n => <NoteCard key={n.id} note={n} />)
+          <div className="columns-1 md:columns-2 xl:columns-3 gap-4 space-y-4">
+            {filtered.map(n => <NoteCard key={n.id} note={n} />)}
+          </div>
         )}
       </main>
 
+      {/* Mobile FAB */}
       <button
         onClick={() => setAddOpen(true)}
-        className="fixed bottom-20 right-4 w-14 h-14 bg-primary text-white rounded-full shadow-xl flex items-center justify-center z-30"
+        className="md:hidden fixed bottom-20 right-4 w-14 h-14 bg-primary text-white rounded-full shadow-xl flex items-center justify-center z-30"
       >
         <Msi icon="add" className="text-3xl" />
       </button>

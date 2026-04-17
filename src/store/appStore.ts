@@ -1,7 +1,7 @@
 'use client';
 
 import { create } from 'zustand';
-import type { Screen, NoteFilter, Part, CartItem, Note } from '@/types';
+import type { Screen, NoteFilter, OperationMode, Part, CartItem, Note, ChatMessage } from '@/types';
 
 const LEGACY_MODEL = 'google/gemini-2.0-flash-exp:free';
 const FALLBACK_MODEL = 'openai/gpt-4o';
@@ -44,8 +44,13 @@ function saveToStorage(key: string, value: unknown) {
   localStorage.setItem(key, JSON.stringify(value));
 }
 
+const STALE_MODELS: Record<string, string> = {
+  'google/gemini-2.5-pro-preview-03-25': 'google/gemini-2.5-pro-preview',
+};
+
 function normalizeModel(model: string): string {
-  return model === LEGACY_MODEL ? FALLBACK_MODEL : model;
+  if (model === LEGACY_MODEL) return FALLBACK_MODEL;
+  return STALE_MODELS[model] ?? model;
 }
 
 interface AppState {
@@ -58,6 +63,9 @@ interface AppState {
   noteFilter: NoteFilter;
   apiKey: string;
   model: string;
+  chatModel: string;
+  operationMode: OperationMode;
+  chatMessages: ChatMessage[];
 
   navigate: (screen: Screen) => void;
   setCurrentPart: (part: Part) => void;
@@ -70,6 +78,10 @@ interface AppState {
   setNoteFilter: (filter: NoteFilter) => void;
   setApiKey: (key: string) => void;
   setModel: (model: string) => void;
+  setChatModel: (model: string) => void;
+  setOperationMode: (mode: OperationMode) => void;
+  addChatMessage: (msg: Omit<ChatMessage, 'id'>) => void;
+  clearChat: () => void;
 }
 
 export const useAppStore = create<AppState>((set, get) => ({
@@ -82,13 +94,16 @@ export const useAppStore = create<AppState>((set, get) => ({
   noteFilter: 'all',
   apiKey: loadFromStorage<string>('age_api_key', ''),
   model: normalizeModel(loadFromStorage<string>('age_model', FALLBACK_MODEL)),
+  chatModel: loadFromStorage<string>('age_chat_model', 'openai/gpt-4o-mini'),
+  operationMode: loadFromStorage<OperationMode>('age_op_mode', 'military'),
+  chatMessages: [],
 
   navigate(screen) {
     set(s => ({ prevScreen: s.screen, screen }));
   },
 
   setCurrentPart(part) {
-    set({ currentPart: part });
+    set({ currentPart: part, chatMessages: [] });
   },
 
   addToCart(item) {
@@ -150,5 +165,23 @@ export const useAppStore = create<AppState>((set, get) => ({
     const nextModel = normalizeModel(model);
     saveToStorage('age_model', nextModel);
     set({ model: nextModel });
+  },
+
+  setChatModel(chatModel) {
+    saveToStorage('age_chat_model', chatModel);
+    set({ chatModel });
+  },
+
+  setOperationMode(operationMode) {
+    saveToStorage('age_op_mode', operationMode);
+    set({ operationMode });
+  },
+
+  addChatMessage(msg) {
+    set(s => ({ chatMessages: [...s.chatMessages, { ...msg, id: Date.now() }] }));
+  },
+
+  clearChat() {
+    set({ chatMessages: [] });
   },
 }));

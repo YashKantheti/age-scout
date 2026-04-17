@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useAppStore } from '@/store/appStore';
 import { useToast } from '@/hooks/useToast';
 import { BottomNav } from '@/components/BottomNav';
+import { SideNav } from '@/components/SideNav';
 import { Toast } from '@/components/Toast';
 import { SettingsModal } from '@/components/SettingsModal';
 import { DashboardScreen } from '@/components/screens/DashboardScreen';
@@ -12,6 +13,7 @@ import { PartDetailsScreen } from '@/components/screens/PartDetailsScreen';
 import { EquipmentScreen } from '@/components/screens/EquipmentScreen';
 import { CartScreen } from '@/components/screens/CartScreen';
 import { NotesScreen } from '@/components/screens/NotesScreen';
+import { ChatScreen } from '@/components/screens/ChatScreen';
 
 export default function App() {
   const { screen, apiKey } = useAppStore();
@@ -25,40 +27,50 @@ export default function App() {
     }
   }, [apiKey]);
 
-  const showNav = screen !== 'scanner';
+  const isScanner = screen === 'scanner';
+  const showNav = !isScanner;
 
   return (
-    <div className="relative max-w-md mx-auto shadow-2xl overflow-hidden bg-bg-light flex flex-col" style={{ height: '100dvh' }}>
+    <div className="flex w-full overflow-hidden" style={{ height: '100dvh' }}>
       <Toast message={message} visible={visible} />
-
       <SettingsModal
         open={settingsOpen}
         onClose={() => setSettingsOpen(false)}
         onSave={() => toast('Settings saved')}
       />
 
-      <div className="flex-1 overflow-hidden relative">
-        <div className={`absolute inset-0 ${screen === 'dashboard' ? 'block' : 'hidden'}`}>
-          <DashboardScreen />
-        </div>
-        <div className={`absolute inset-0 ${screen === 'scanner' ? 'block' : 'hidden'}`}>
-          <ScannerScreen onToast={toast} />
-        </div>
-        <div className={`absolute inset-0 ${screen === 'part-details' ? 'block' : 'hidden'}`}>
-          <PartDetailsScreen onToast={toast} />
-        </div>
-        <div className={`absolute inset-0 ${screen === 'equipment' ? 'block' : 'hidden'}`}>
-          <EquipmentScreen />
-        </div>
-        <div className={`absolute inset-0 ${screen === 'cart' ? 'block' : 'hidden'}`}>
-          <CartScreen onToast={toast} />
-        </div>
-        <div className={`absolute inset-0 ${screen === 'notes' ? 'block' : 'hidden'}`}>
-          <NotesScreen onToast={toast} />
-        </div>
-      </div>
+      {/* Sidebar — desktop only, hidden in scanner */}
+      {showNav && <SideNav onOpenSettings={() => setSettingsOpen(true)} />}
 
-      {showNav && <BottomNav />}
+      {/* Main content area */}
+      <div className="flex-1 flex flex-col min-w-0 overflow-hidden bg-bg-light">
+        <div className="flex-1 overflow-hidden relative">
+          <div className={`absolute inset-0 ${screen === 'dashboard'   ? 'block' : 'hidden'}`}>
+            <DashboardScreen onOpenSettings={() => setSettingsOpen(true)} />
+          </div>
+          <div className={`absolute inset-0 ${isScanner               ? 'block' : 'hidden'}`}>
+            <ScannerScreen onToast={toast} />
+          </div>
+          <div className={`absolute inset-0 ${screen === 'part-details'? 'block' : 'hidden'}`}>
+            <PartDetailsScreen onToast={toast} />
+          </div>
+          <div className={`absolute inset-0 ${screen === 'equipment'   ? 'block' : 'hidden'}`}>
+            <EquipmentScreen />
+          </div>
+          <div className={`absolute inset-0 ${screen === 'cart'        ? 'block' : 'hidden'}`}>
+            <CartScreen onToast={toast} />
+          </div>
+          <div className={`absolute inset-0 ${screen === 'notes'       ? 'block' : 'hidden'}`}>
+            <NotesScreen onToast={toast} />
+          </div>
+          <div className={`absolute inset-0 ${screen === 'chat'        ? 'block' : 'hidden'}`}>
+            <ChatScreen onToast={toast} />
+          </div>
+        </div>
+
+        {/* Bottom nav — mobile only */}
+        {showNav && <BottomNav />}
+      </div>
     </div>
   );
 }

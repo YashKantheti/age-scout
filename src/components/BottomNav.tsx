@@ -15,7 +15,7 @@ export function BottomNav() {
 
   return (
     <nav
-      className="shrink-0 flex justify-around items-center px-2 py-2 bg-surface border-t border-border-light z-50"
+      className="md:hidden shrink-0 flex justify-around items-center px-2 py-2 bg-surface border-t border-border-light z-50"
       style={{ paddingBottom: 'max(8px, env(safe-area-inset-bottom))' }}
     >
       {NAV_ITEMS.map(item => {
